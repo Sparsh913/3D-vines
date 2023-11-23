@@ -1,0 +1,8 @@
+prefix=/home/uas-laptop/Kantor_Lab/3D-vines/ros_ws/devel
+
+Name: bumblebee
+Description: Description of bumblebee
+Version: 0.0.0
+Cflags: 
+Libs: -L${prefix}/lib 
+Requires: 

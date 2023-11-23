@@ -1,0 +1,2 @@
+bumblebee
+-DCATKIN_DEVEL_PREFIX=/home/uas-laptop/Kantor_Lab/3D-vines/ros_ws/devel -DCMAKE_INSTALL_PREFIX=/home/uas-laptop/Kantor_Lab/3D-vines/ros_ws/install -G Unix Makefiles

@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+
+<launch>
+    <!-- <arg name = "restore_ckpt" /> -->
+    <arg name = "corr_implementation" default = "alt"/>
+    <arg name = "mixed_precision" />
+
+    <node name = "disparity_from_raft" pkg = "bumblebee" type = "disparity_from_raft.py" args = "--corr_implementation $(arg corr_implementation) --mixed_precision"/>
+
+    <!-- <node name = "raw2rect" pkg = "bumblebee" type = "raw2rect.py" output = "screen"/> -->
+
+</launch>
