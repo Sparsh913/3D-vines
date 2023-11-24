@@ -1,12 +1,14 @@
 <?xml version="1.0"?>
 
 <launch>
-    <!-- <arg name = "restore_ckpt" /> -->
+
+    <node name = "raw2rect" pkg = "bumblebee" type = "raw2rect.py" output = "screen"/>
+
+    <arg name = "restore_ckpt" default = '/home/uas-laptop/Kantor_Lab/RAFT-Stereo/models/raftstereo-middlebury.pth' />
     <arg name = "corr_implementation" default = "alt"/>
     <arg name = "mixed_precision" />
 
-    <node name = "disparity_from_raft" pkg = "bumblebee" type = "disparity_from_raft.py" args = "--corr_implementation $(arg corr_implementation) --mixed_precision"/>
-
-    <!-- <node name = "raw2rect" pkg = "bumblebee" type = "raw2rect.py" output = "screen"/> -->
-
+    <node name = "disparity_from_raft_bot" pkg = "bumblebee" type = "disparity_from_raft_bot.py" args = "--restore_ckpt $(arg restore_ckpt) --corr_implementation $(arg corr_implementation) --mixed_precision"/>
+    <node name = "disparity_from_raft_top" pkg = "bumblebee" type = "disparity_from_raft_top.py" args = "--restore_ckpt $(arg restore_ckpt) --corr_implementation $(arg corr_implementation) --mixed_precision"/>
+    <node name = "registration_bot" pkg = "bumblebee" type = "registration_bot.py" output = "screen"/>
 </launch>

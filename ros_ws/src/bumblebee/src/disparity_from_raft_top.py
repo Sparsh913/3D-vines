@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+############################ Node to find disparity from top stereo (Cam 2 | Cam 3) images using RAFT-Stereo ############################
+
 import sys
 sys.path.append('/home/uas-laptop/Kantor_Lab/RAFT-Stereo')
 sys.path.append('/home/uas-laptop/Kantor_Lab/RAFT-Stereo/core')
@@ -16,7 +18,7 @@ from PIL import Image
 from matplotlib import pyplot as plt
 import cv2
 import rospy
-from sensor_msgs.msg import Image
+from sensor_msgs.msg import Image as Image_msg
 from cv_bridge import CvBridge
 from std_msgs.msg import Float64MultiArray
 
@@ -32,7 +34,7 @@ def callback1(data):
     print("callback1")
     torch.cuda.empty_cache()
     
-    imgL = callback0(rospy.wait_for_message("/left_bot_rect", Image))
+    imgL = callback0(rospy.wait_for_message("/left_bot_rect", Image_msg))
     imgR = bridge.imgmsg_to_cv2(data, "bgr8")
 
     def rgb2gray(rgb):
@@ -133,19 +135,19 @@ def callback1(data):
     print("disparity shape: ", disparity.shape)
     np_msg = Float64MultiArray()
     np_msg.data = disparity
-    disp_bot_publisher.publish(np_msg)
+    disp_top_publisher.publish(np_msg)
     
                 
 def listener():
-    rospy.Subscriber("/left_bot_rect", Image, callback0)
-    rospy.Subscriber("/right_bot_rect", Image, callback1)
+    rospy.Subscriber("/left_top_rect", Image_msg, callback0)
+    rospy.Subscriber("/right_top_rect", Image_msg, callback1)
     
     rospy.spin()
 
 def parse_args():
     parser = argparse.ArgumentParser()
     # parser.add_argument('--restore_ckpt', help="restore checkpoint", required=True)
-    parser.add_argument('--restore_ckpt', help="restore checkpoint", default='/home/uas-laptop/Kantor_Lab/RAFT-Stereo/models/raftstereo-middlebury.pth')
+    parser.add_argument('--restore_ckpt', help="restore checkpoint", required=True)
     parser.add_argument('--save_numpy', action='store_true', help='save output as numpy arrays')
     parser.add_argument('-l', '--left_imgs', help="path to all first (left) frames", default="datasets/Middlebury/MiddEval3/testH/*/im0.png")
     parser.add_argument('-r', '--right_imgs', help="path to all second (right) frames", default="datasets/Middlebury/MiddEval3/testH/*/im1.png")
@@ -171,10 +173,10 @@ if __name__ == '__main__':
     bridge = CvBridge()
     
     # Initiate node
-    rospy.init_node('disparity_from_raft')
+    rospy.init_node('disparity_from_raft_top')
     
     # Publisher
-    disp_bot_publisher = rospy.Publisher('disp_bot', Float64MultiArray, queue_size=10)
+    disp_top_publisher = rospy.Publisher('disp_top', Float64MultiArray, queue_size=10)
     
     #Following two lines are required so that argparse does not parse rosparams
     sys.argv = list(filter(lambda arg: not arg.startswith('__'), sys.argv))
