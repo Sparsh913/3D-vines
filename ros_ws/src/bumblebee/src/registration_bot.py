@@ -62,7 +62,8 @@ def callback2(data):
     img_list_left.append(imgL)
     imgR = callback1(rospy.wait_for_message("/right_bot_rect", Image))
     img_list_right.append(imgR)
-    disp = np.array(data.data).reshape((data.layout.dim[0].size, data.layout.dim[1].size))
+    # disp = np.array(data.data).reshape((data.layout.dim[0].size, data.layout.dim[1].size))
+    disp = np.array(data.data).reshape(disp_shape)
     disp_list.append(disp)
     
     if (len(img_list_left)) == 7 and (len(img_list_right)) == 7 and (len(disp_list)) == 7:
@@ -240,25 +241,30 @@ def callback2(data):
         
         # Publish the point cloud
         pcd_bot_publisher.publish(pc2_msg)
+        rate.sleep()
         
         # Clear the lists
-        img_list_left = []
-        img_list_right = []
-        disp_list = []
+        img_list_left.clear()
+        img_list_right.clear()
+        disp_list.clear()
     
 
 def listener():
-    rospy.Subscriber("/left_bot_rect", Image, callback0)
-    rospy.Subscriber("/right_bot_rect", Image, callback1)
-    rospy.Subscriber("/disp_bot", Float64MultiArray, callback2)
+    rospy.Subscriber("/left_bot_rect", Image, callback0, queue_size=qs)
+    rospy.Subscriber("/right_bot_rect", Image, callback1, queue_size=qs)
+    rospy.Subscriber("/disp_bot", Float64MultiArray, callback2, queue_size=qs)
     rospy.spin()
     
 if __name__ == '__main__':
+    qs = 200000
     img_list_left = []
     img_list_right = []
     disp_list = []
     bridge = CvBridge()
+    disp_shape = (1536, 2048)
     path = '/home/uas-laptop/Kantor_Lab/3D-vines/images/2022-11-09-16-57-53.bag/'
-    rospy.init_node('listener', anonymous=True)
-    pcd_bot_publisher = rospy.Publisher("/pcd_bot", PointCloud2, queue_size=10)
+    rospy.init_node('registration_bot')
+    pcd_bot_publisher = rospy.Publisher("/pcd_bot", PointCloud2, queue_size=qs)
+    rate = rospy.Rate(0.07)
+    
     listener()

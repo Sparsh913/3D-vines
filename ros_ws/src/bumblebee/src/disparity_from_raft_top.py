@@ -72,7 +72,8 @@ def callback1(data):
     DEVICE = 'cuda'
 
     def load_image(imfile):
-        img = np.array(Image.open(imfile)).astype(np.uint8)
+        # img = np.array(Image.open(imfile)).astype(np.uint8)
+        img = imfile.astype(np.uint8)
         img = torch.from_numpy(img).permute(2, 0, 1).float()
         return img[None].to(DEVICE)
 
@@ -90,8 +91,8 @@ def callback1(data):
         with torch.no_grad():
             # left_images = sorted(glob.glob(args.left_imgs, recursive=True))
             # right_images = sorted(glob.glob(args.right_imgs, recursive=True))
-            left_images = imgL
-            right_images = imgR
+            left_images = [imgL]
+            right_images = [imgR]
             
             print(f"Found {len(left_images)} images. Saving files to {output_directory}/")
 
@@ -103,7 +104,8 @@ def callback1(data):
                 padder = InputPadder(image1.shape, divis_by=32)
                 image1, image2 = padder.pad(image1, image2)
 
-                edge_map = get_edge_map(np.array(Image.open(imfile1)))
+                # edge_map = get_edge_map(np.array(Image.open(imfile1)))
+                edge_map = get_edge_map(np.array(imfile1))
 
                 _, flow_up = model(image1, image2, iters=args.valid_iters, test_mode=True)
                 flow_up = padder.unpad(flow_up).squeeze()

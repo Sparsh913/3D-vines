@@ -23,6 +23,7 @@ from cv_bridge import CvBridge
 from std_msgs.msg import Float64MultiArray
 
 def callback0(data):
+    
     print("callback0")
     imgL = bridge.imgmsg_to_cv2(data, "bgr8")
     # cv2.imshow("Image window", cv_image0)
@@ -31,11 +32,14 @@ def callback0(data):
     return imgL
 
 def callback1(data):
+    rospy.loginfo(rospy.get_time())
     print("callback1")
     torch.cuda.empty_cache()
     
     imgL = callback0(rospy.wait_for_message("/left_bot_rect", Image_msg))
     imgR = bridge.imgmsg_to_cv2(data, "bgr8")
+    print("imgL shape: ", imgL.shape)
+    print("imgR shape: ", imgR.shape)
 
     def rgb2gray(rgb):
         # Converts rgb to gray
@@ -72,7 +76,8 @@ def callback1(data):
     DEVICE = 'cuda'
 
     def load_image(imfile):
-        img = np.array(Image.open(imfile)).astype(np.uint8)
+        # img = np.array(Image.open(imfile)).astype(np.uint8)
+        img = imfile.astype(np.uint8)
         img = torch.from_numpy(img).permute(2, 0, 1).float()
         return img[None].to(DEVICE)
 
@@ -90,8 +95,8 @@ def callback1(data):
         with torch.no_grad():
             # left_images = sorted(glob.glob(args.left_imgs, recursive=True))
             # right_images = sorted(glob.glob(args.right_imgs, recursive=True))
-            left_images = imgL
-            right_images = imgR
+            left_images = [imgL]
+            right_images = [imgR]
             
             print(f"Found {len(left_images)} images. Saving files to {output_directory}/")
 
@@ -103,44 +108,49 @@ def callback1(data):
                 padder = InputPadder(image1.shape, divis_by=32)
                 image1, image2 = padder.pad(image1, image2)
 
-                edge_map = get_edge_map(np.array(Image.open(imfile1)))
+                # edge_map = get_edge_map(np.array(Image.open(imfile1)))
+                edge_map = get_edge_map(np.array(imfile1))
 
                 _, flow_up = model(image1, image2, iters=args.valid_iters, test_mode=True)
                 flow_up = padder.unpad(flow_up).squeeze()
 
-                file_stem = imfile1.split('/')[-1].split('.')[0]
+                # file_stem = imfile1.split('/')[-1].split('.')[0]
 
                 if args.save_numpy:
                     flow_up_npy = flow_up.cpu().numpy() * edge_map
-                    np.save(output_directory / f"{file_stem}_masked.npy", flow_up_npy.squeeze())
+                    # np.save(output_directory / f"{file_stem}_masked.npy", flow_up_npy.squeeze())
 
-                if args.save_numpy:
-                    np.save(output_directory / f"{file_stem}.npy", flow_up.cpu().numpy().squeeze())
+                # if args.save_numpy:
+                #     np.save(output_directory / f"{file_stem}.npy", flow_up.cpu().numpy().squeeze())
                     
-                plt.imsave(output_directory / f"{file_stem}.png", -flow_up.cpu().numpy().squeeze(), cmap='inferno')
+                # plt.imsave(output_directory / f"{file_stem}.png", -flow_up.cpu().numpy().squeeze(), cmap='inferno')
 
-                #save edge map 
-                plt.imsave(output_directory / f"{file_stem}_edge_map.png", edge_map, cmap='gray')
+                # #save edge map 
+                # plt.imsave(output_directory / f"{file_stem}_edge_map.png", edge_map, cmap='gray')
 
                 #multiply edge map with flow map
-                flow_up = flow_up.cpu().numpy().squeeze()
-                flow_up = flow_up * edge_map
+                # flow_up = flow_up.cpu().numpy().squeeze()
+                # flow_up = flow_up * edge_map
                 
 
                 #save flow map with edge map
-                plt.imsave(output_directory / f"{file_stem}_edge_flow_map.png", -flow_up, cmap='inferno')
+                # plt.imsave(output_directory / f"{file_stem}_edge_flow_map.png", -flow_up, cmap='inferno')
+                # disp_return = flow_up.cpu().numpy().squeeze()
                 
         return flow_up.cpu().numpy().squeeze()
     disparity = demo(args)
     print("disparity shape: ", disparity.shape)
     np_msg = Float64MultiArray()
-    np_msg.data = disparity
+    np_msg.data = disparity.flatten().tolist()
     disp_bot_publisher.publish(np_msg)
+    rate.sleep()
+    
+    rospy.loginfo(rospy.get_time())
     
                 
 def listener():
-    rospy.Subscriber("/left_bot_rect", Image_msg, callback0)
-    rospy.Subscriber("/right_bot_rect", Image_msg, callback1)
+    rospy.Subscriber("/left_bot_rect", Image_msg, callback0, queue_size=qs)
+    rospy.Subscriber("/right_bot_rect", Image_msg, callback1, queue_size=qs)
     
     rospy.spin()
 
@@ -176,7 +186,7 @@ if __name__ == '__main__':
     rospy.init_node('disparity_from_raft_bot')
     
     # Publisher
-    disp_bot_publisher = rospy.Publisher('disp_bot', Float64MultiArray, queue_size=10)
+    disp_bot_publisher = rospy.Publisher('disp_bot', Float64MultiArray, queue_size=200000)
     
     #Following two lines are required so that argparse does not parse rosparams
     sys.argv = list(filter(lambda arg: not arg.startswith('__'), sys.argv))
@@ -188,4 +198,6 @@ if __name__ == '__main__':
     # args = parser.parse_args()
 
     # demo(args)
+    rate = rospy.Rate(0.07)
+    qs = 200000
     listener()

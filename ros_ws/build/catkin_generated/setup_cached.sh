@@ -7,5 +7,4 @@
 # new environment variables
 
 # modified environment variables
-export PATH='/opt/ros/noetic/bin:/home/uas-laptop/anaconda3/envs/raftstereo/bin:/home/uas-laptop/anaconda3/condabin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin'
 export PWD='/home/uas-laptop/Kantor_Lab/3D-vines/ros_ws/build'

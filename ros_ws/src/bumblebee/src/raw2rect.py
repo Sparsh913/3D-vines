@@ -51,6 +51,7 @@ def callback1(data):
     # Publish the rectified images
     rect_l_bot_publisher.publish(bridge.cv2_to_imgmsg(rectified_left, "bgr8"))
     rect_r_bot_publisher.publish(bridge.cv2_to_imgmsg(rectified_right, "bgr8"))
+    rate.sleep()
  
 
 def callback2(data):
@@ -81,6 +82,7 @@ def callback3(data):
     # Publish the rectified images
     rect_l_top_publisher.publish(bridge.cv2_to_imgmsg(rectified_left, "bgr8"))
     rect_r_top_publisher.publish(bridge.cv2_to_imgmsg(rectified_right, "bgr8"))
+    rate.sleep()
     
 
 
@@ -133,20 +135,24 @@ def rectify_top(imgL, imgR):
 
 
 def listener():
-    rospy.init_node('raw2rect')
     # rospy.Subscriber("chatter", String, callback)
-    rospy.Subscriber("/theia/cam0/image_raw", Image, callback0)
-    rospy.Subscriber("/theia/cam1/image_raw", Image, callback1)
-    rospy.Subscriber("/theia/cam2/image_raw", Image, callback2)
-    rospy.Subscriber("/theia/cam3/image_raw", Image, callback3)
+    rospy.Subscriber("/theia/cam0/image_raw", Image, callback0, queue_size=qs)
+    rospy.Subscriber("/theia/cam1/image_raw", Image, callback1, queue_size=qs)
+    rospy.Subscriber("/theia/cam2/image_raw", Image, callback2, queue_size=qs)
+    rospy.Subscriber("/theia/cam3/image_raw", Image, callback3, queue_size=qs)
 
     rospy.spin() # keeps python from exiting until this node is stopped
 
 if __name__ == '__main__':
-    rect_l_bot_publisher = rospy.Publisher('left_bot_rect', Image, queue_size=10)
-    rect_r_bot_publisher = rospy.Publisher('right_bot_rect', Image, queue_size=10)
-    rect_l_top_publisher = rospy.Publisher('left_top_rect', Image, queue_size=10)
-    rect_r_top_publisher = rospy.Publisher('right_top_rect', Image, queue_size=10)
+    rospy.init_node('raw2rect')
+    qs = 200000
+    rate = rospy.Rate(0.07)
+    rect_l_bot_publisher = rospy.Publisher('left_bot_rect', Image, queue_size=qs)
+    rect_r_bot_publisher = rospy.Publisher('right_bot_rect', Image, queue_size=qs)
+    rect_l_top_publisher = rospy.Publisher('left_top_rect', Image, queue_size=qs)
+    rect_r_top_publisher = rospy.Publisher('right_top_rect', Image, queue_size=qs)
+    
+    
     listener()
     # print("No. of images in rectified_bot:", len(rectified_bot))
     # print("No. of images in rectified_top:", len(rectified_top))

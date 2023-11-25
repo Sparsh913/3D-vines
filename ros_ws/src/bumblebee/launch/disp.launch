@@ -8,7 +8,7 @@
     <arg name = "corr_implementation" default = "alt"/>
     <arg name = "mixed_precision" />
 
-    <node name = "disparity_from_raft_bot" pkg = "bumblebee" type = "disparity_from_raft_bot.py" args = "--restore_ckpt $(arg restore_ckpt) --corr_implementation $(arg corr_implementation) --mixed_precision"/>
-    <node name = "disparity_from_raft_top" pkg = "bumblebee" type = "disparity_from_raft_top.py" args = "--restore_ckpt $(arg restore_ckpt) --corr_implementation $(arg corr_implementation) --mixed_precision"/>
+    <node name = "disparity_from_raft_bot" pkg = "bumblebee" type = "disparity_from_raft_bot.py" output = "screen" args = "--restore_ckpt $(arg restore_ckpt) --corr_implementation $(arg corr_implementation) --mixed_precision"/>
+    
     <node name = "registration_bot" pkg = "bumblebee" type = "registration_bot.py" output = "screen"/>
 </launch>
