@@ -7,8 +7,10 @@
     <arg name = "restore_ckpt" default = '/home/uas-laptop/Kantor_Lab/RAFT-Stereo/models/raftstereo-middlebury.pth' />
     <arg name = "corr_implementation" default = "alt"/>
     <arg name = "mixed_precision" />
+    <arg name = "output_directory" default = '/home/uas-laptop/Kantor_Lab/3D-vines/ros_ws/src/bumblebee/src/demo_output' />
 
-    <node name = "disparity_from_raft_bot" pkg = "bumblebee" type = "disparity_from_raft_bot.py" output = "screen" args = "--restore_ckpt $(arg restore_ckpt) --corr_implementation $(arg corr_implementation) --mixed_precision"/>
+    <node name = "disparity_from_raft_bot" pkg = "bumblebee" type = "disparity_from_raft_bot.py" output = "screen" args = "--restore_ckpt $(arg restore_ckpt) --corr_implementation $(arg corr_implementation) --output_directory $(arg output_directory) --mixed_precision" />
     
     <node name = "registration_bot" pkg = "bumblebee" type = "registration_bot.py" output = "screen"/>
+    <node name = "registration_top" pkg = "bumblebee" type = "registration_top.py" output = "screen"/>
 </launch>

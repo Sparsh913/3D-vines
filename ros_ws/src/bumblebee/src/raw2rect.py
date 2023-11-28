@@ -6,12 +6,7 @@ import cv2
 import numpy as np
 import threading
 
-bridge = CvBridge()
-rectified_bot = []
-rectified_top = []
-countBot = 0
-countTop = 0
-path = '/home/uas-laptop/Kantor_Lab/3D-vines/images/2022-11-09-16-57-53.bag/'
+
 # cv_image0 = []
 # cv_image1 = []
 # cv_image2 = []
@@ -22,25 +17,35 @@ path = '/home/uas-laptop/Kantor_Lab/3D-vines/images/2022-11-09-16-57-53.bag/'
 
 def callback0(data):
     # rospy.loginfo(rospy.get_caller_id() + "I heard %s", data.data)
-    # global cv_image0
+    global callback0_event
+    global cv_image0
     cv_image0 = bridge.imgmsg_to_cv2(data, "bgr8")
+    callback0_event.set() #Set the event to indicate callback0 has finished
     # cv2.imshow("Image window", cv_image0)
     # cv2.waitKey(0)
     # print("resolution img 0:", cv_image0.shape)
     return cv_image0
 
 def callback1(data):
+    global callback0_event
     global rectified_bot
     global countBot
+    
+    # Wait for callback0 to finish
+    callback0_event.wait()
+    
     cv_image1 = bridge.imgmsg_to_cv2(data, "bgr8")
 
-    imgL = callback0(rospy.wait_for_message("/theia/cam0/image_raw", Image))
+    # imgL = callback0(rospy.wait_for_message("/theia/cam0/image_raw", Image))
+    imgL = cv_image0
+    print("imgL shape from raw_rect: ", imgL.shape)
     imgR = cv_image1
 
     # print("Rectifying Bottom images")
     
     rectified_left, rectified_right = rectify_bot(imgL, imgR)
-    # cv2.imwrite(f"Images/RectBot/Left_Rect_Bot_{countBot}.png", rectified_left)
+    # print("Writing Images")
+    # cv2.imwrite(f"Left_Rect_Bot_{countBot}.png", rectified_left)
     # cv2.imwrite(f"Images/RectBot/Right_Rect_Bot_{countBot}.png", rectified_right)
     countBot += 1
     # rectified_bot.append((rectified_left, rectified_right))
@@ -51,21 +56,32 @@ def callback1(data):
     # Publish the rectified images
     rect_l_bot_publisher.publish(bridge.cv2_to_imgmsg(rectified_left, "bgr8"))
     rect_r_bot_publisher.publish(bridge.cv2_to_imgmsg(rectified_right, "bgr8"))
-    rate.sleep()
+    # rate.sleep()
+    callback0_event.clear()  # Set the event to indicate callback0 has finished
  
 
 def callback2(data):
+    global callback2_event
+    global cv_image2
 
     cv_image2 = bridge.imgmsg_to_cv2(data, "bgr8")
+    callback2_event.set() #Set the event to indicate callback2 has finished
 
     return cv_image2
 
 def callback3(data):
+    global callback2_event
     global rectified_top
     global countTop
+    
+    # Wait for callback2 to finish
+    callback2_event.wait()
+    
     cv_image3 = bridge.imgmsg_to_cv2(data, "bgr8")
 
-    imgL = callback2(rospy.wait_for_message("/theia/cam2/image_raw", Image))
+    # imgL = callback2(rospy.wait_for_message("/theia/cam2/image_raw", Image))
+    imgL = cv_image2
+    print("imgL shape from raw_rect: ", imgL.shape)
     imgR = cv_image3
 
     # print("Rectifying Top images")
@@ -82,8 +98,8 @@ def callback3(data):
     # Publish the rectified images
     rect_l_top_publisher.publish(bridge.cv2_to_imgmsg(rectified_left, "bgr8"))
     rect_r_top_publisher.publish(bridge.cv2_to_imgmsg(rectified_right, "bgr8"))
-    rate.sleep()
-    
+    # rate.sleep()
+    callback2_event.clear()  # Set the event to indicate callback0 has finished
 
 
 def rectify_bot(imgL, imgR):
@@ -144,13 +160,26 @@ def listener():
     rospy.spin() # keeps python from exiting until this node is stopped
 
 if __name__ == '__main__':
+    
+    callback0_event = threading.Event()
+    callback2_event = threading.Event()
+    
+    cv_image0 = None
+    cv_image2 = None
     rospy.init_node('raw2rect')
-    qs = 200000
+    qs = 200
     rate = rospy.Rate(0.07)
     rect_l_bot_publisher = rospy.Publisher('left_bot_rect', Image, queue_size=qs)
     rect_r_bot_publisher = rospy.Publisher('right_bot_rect', Image, queue_size=qs)
     rect_l_top_publisher = rospy.Publisher('left_top_rect', Image, queue_size=qs)
     rect_r_top_publisher = rospy.Publisher('right_top_rect', Image, queue_size=qs)
+    
+    bridge = CvBridge()
+    rectified_bot = []
+    rectified_top = []
+    countBot = 0
+    countTop = 0
+    path = '/home/uas-laptop/Kantor_Lab/3D-vines/images/2022-11-09-16-57-53.bag/'
     
     
     listener()
